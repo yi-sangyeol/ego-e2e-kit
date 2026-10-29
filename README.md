@@ -11,37 +11,104 @@
 
 > ego-browser の非公式ツールです。ego-browser の開発元とは関係ありません。
 
-## 依存
+## セットアップ
 
-| 依存 | 必須 | 用途 |
-| --- | --- | --- |
-| **ego-browser (ego lite)** の CLI と skill | 両方の skill で必須 | ブラウザの実操作。ego lite アプリを [lite.ego.app](https://lite.ego.app/) から入れ、初回のオンボーディングを済ませると、CLI（`~/.local/bin/ego-browser`）と skill（`~/.claude/skills/ego-browser`）の両方が入る |
-| ffmpeg / ffprobe | `test-mov` で必須 | 動画の組み立て。macOS: `brew install ffmpeg` |
-| Python 3.9+ | `test-mov` で必須 | 音声と動画の組み立て（標準ライブラリのみ） |
-| VOICEVOX Engine | 任意 | 音声。無ければ macOS の `say`、それも無ければ音声なし（字幕のみ） |
+上から順に進めてください。**1 と 2 は両方の skill で必須**です。3 は `test-mov` で音声を入れるときに必要です。
 
-ego-browser の skill は Claude Code のプラグインとしては配られていません（ego lite アプリが自分の同梱ファイルを `~/.claude/skills` にリンクする）。そのため、プラグインの `dependencies` には書けません。各 skill は最初に `scripts/doctor.sh` で依存を確かめ、足りなければ直し方を出して止まります。手で確かめるときは次を実行します。
+| # | やること | 必要な skill | 無いとどうなるか |
+| --- | --- | --- | --- |
+| 1 | ego lite と ego-browser skill を入れる | 両方 | 動かない（`doctor.sh` が止める） |
+| 2 | ffmpeg と Python 3.9 以上を入れる | `test-mov` | 動画を作れない |
+| 3 | Docker を入れ、VOICEVOX Engine を起動する | `test-mov`（任意） | macOS の `say` の声になる。macOS 以外は音声なし（字幕のみ） |
+| 4 | このプラグインを入れる | 両方 | — |
+| 5 | 依存を確かめる | 両方 | — |
+
+### 1. ego lite と ego-browser skill を入れる（必須）
+
+ブラウザの操作は、すべて ego lite（ego-browser）でします。**アプリ本体の CLI と、Claude Code 用の `ego-browser` skill の両方**が要ります。
+
+1. [lite.ego.app](https://lite.ego.app/) から ego lite をダウンロードして入れる。
+2. ego lite を起動し、**初回のオンボーディングを最後まで済ませる**。ここで次の 2 つが入ります。
+   - CLI: `~/.local/bin/ego-browser`
+   - skill: `~/.claude/skills/ego-browser`（ego lite のアプリ内のファイルへの symlink）
+3. 入ったか確かめる。
+
+   ```bash
+   ego-browser skill | tail -n 1     # "[ego-browser:skill] end of guide" で終われば OK
+   ls -l ~/.claude/skills/ego-browser
+   ```
+
+   `ego-browser: command not found` になるときは、`~/.local/bin` を `PATH` に足してください。
+
+> ego-browser の skill は、Claude Code のプラグインとしては配られていません。そのため、このプラグインの依存（`dependencies`）として自動では入りません。必ず手で入れてください。
+
+### 2. ffmpeg と Python を入れる（`test-mov` で必須）
 
 ```bash
-bash scripts/doctor.sh mov
+brew install ffmpeg          # ffmpeg と ffprobe が入る
+python3 --version            # 3.9 以上（macOS 標準の /usr/bin/python3 でよい）
 ```
 
-VOICEVOX はローカルの Docker で動かすのが手軽です。
+Python は標準ライブラリだけを使います。`pip install` は要りません。`python3` が落ちる環境（pyenv のシムなど）では、自動で `/usr/bin/python3` を使います。明示するときは `EGO_E2E_PYTHON=/path/to/python3` を設定します。
 
-```bash
-docker run -d --name voicevox --restart unless-stopped -p 127.0.0.1:50021:50021 voicevox/voicevox_engine:cpu-latest
-```
+### 3. Docker と VOICEVOX Engine（`test-mov` の音声。任意）
 
-## インストール
+ナレーションの声は [VOICEVOX](https://voicevox.hiroshiba.jp/) Engine で作ります。**Docker の環境が必要で、撮影のたびに VOICEVOX Engine が起動している必要があります。**
 
-Claude Code の中で実行します。
+1. Docker を入れる（[Docker Desktop](https://www.docker.com/products/docker-desktop/) か [OrbStack](https://orbstack.dev/) など）。起動して `docker version` が通ることを確かめる。
+2. 初回だけ、VOICEVOX Engine のコンテナを作って起動する。
+
+   ```bash
+   docker run -d --name voicevox --restart unless-stopped \
+     -p 127.0.0.1:50021:50021 voicevox/voicevox_engine:cpu-latest
+   ```
+
+3. 2 回目以降は、止まっていれば起動する（`--restart unless-stopped` なので、Docker が動いていれば通常は自動で上がります）。
+
+   ```bash
+   docker start voicevox
+   ```
+
+4. 応答を確かめる。
+
+   ```bash
+   curl -s localhost:50021/version          # バージョンが返れば OK
+   curl -s localhost:50021/speakers | head  # 話者の一覧（声を選ぶときの ID）
+   ```
+
+VOICEVOX が応答しないときは、macOS では `say`（既定は Kyoko）の声に自動で切り替わります。macOS 以外では音声なし（字幕のみ）になります。最初から VOICEVOX を使わないなら、設定で `"voice": {"engine": "say"}` か `"none"` にします（[設定](#設定)）。
+
+### 4. プラグインを入れる
+
+**Claude Code の中**（プロンプト欄）で、次の 2 行を順に実行します。
 
 ```
 /plugin marketplace add yi-sangyeol/ego-e2e-kit
 /plugin install ego-e2e-kit@ego-e2e-kit
 ```
 
-チームのリポジトリで候補に出したいときは、そのリポジトリの `.claude/settings.json` に次を書きます。メンバーはフォルダを信頼すると、インストールを勧められます。
+- 1 行目で、この GitHub リポジトリを marketplace として登録します。
+- 2 行目で、プラグインを入れます。`ego-e2e-kit@ego-e2e-kit` は「プラグイン名@marketplace 名」です。
+- 入れた後は Claude Code を再起動します。
+
+ターミナルからなら次のとおりです。
+
+```bash
+claude plugin marketplace add yi-sangyeol/ego-e2e-kit
+claude plugin install ego-e2e-kit@ego-e2e-kit
+```
+
+入ったかは、`/plugin` の一覧に `ego-e2e-kit` があるか、プロンプト欄で `/ego-e2e-kit:` と打って `e2e-shot` と `test-mov` が候補に出るかで確かめます。
+
+| 操作 | ターミナル |
+| --- | --- |
+| 入っているか確かめる | `claude plugin list` |
+| 更新 | `claude plugin marketplace update ego-e2e-kit` → `claude plugin update ego-e2e-kit@ego-e2e-kit` |
+| 削除 | `claude plugin uninstall ego-e2e-kit@ego-e2e-kit` |
+
+#### チームのリポジトリで勧める
+
+チームのリポジトリの `.claude/settings.json` に次を書いてコミットします。メンバーがそのフォルダを信頼すると、marketplace の登録とインストールを勧められます。1〜3 の依存は、各自が入れる必要があります。
 
 ```json
 {
@@ -51,6 +118,28 @@ Claude Code の中で実行します。
   "enabledPlugins": { "ego-e2e-kit@ego-e2e-kit": true }
 }
 ```
+
+### 5. 依存を確かめる
+
+skill は実行のたびに最初に依存を確かめ、足りなければ直し方を出して止まります。手で確かめるときは、このリポジトリを clone して次を実行します。
+
+```bash
+bash scripts/doctor.sh mov   # test-mov 用（ego-browser・ffmpeg・python3・VOICEVOX）
+bash scripts/doctor.sh shot  # e2e-shot 用（ego-browser だけ）
+```
+
+`ready` と出れば準備完了です。`NG` は必須の依存が欠けています。`WARN` は任意の依存（VOICEVOX）が無いという意味で、そのまま使えます。
+
+## 使い方
+
+テストしたいプロジェクトのディレクトリで Claude Code を開き、次のように呼びます。
+
+```
+/ego-e2e-kit:e2e-shot ログイン画面のバリデーションを確認して
+/ego-e2e-kit:test-mov #4 変更期限 ケースA
+```
+
+対象の URL・前提条件をプロジェクト設定（`.claude/ego-e2e.json`）に書いておくと、毎回聞かれずに済みます。書いていなければ、skill が実行前に質問します。
 
 ## 設定
 
