@@ -41,9 +41,10 @@ if [ "$MODE" = "mov" ]; then
   CFG="$(cd "$(dirname "$0")" && pwd)/config.py"
   ENGINE="$([ -n "$PY" ] && "$PY" -I "$CFG" get voice.engine 2>/dev/null || echo auto)"
   URL="$([ -n "$PY" ] && "$PY" -I "$CFG" get voice.voicevoxUrl 2>/dev/null || echo http://127.0.0.1:50021)"
+  case "$URL" in http://*|https://*) ;; *) warn "voice.voicevoxUrl が http(s) ではないので既定値を使う: $URL"; URL=http://127.0.0.1:50021 ;; esac
   if [ "$ENGINE" = "say" ] || [ "$ENGINE" = "none" ]; then
     ok "voice.engine=$ENGINE (VOICEVOX は使わない)"
-  elif curl -s --max-time 2 "$URL/version" >/dev/null 2>&1; then
+  elif curl -s --max-time 2 --proto =http,https -- "$URL/version" >/dev/null 2>&1; then
     ok "VOICEVOX ($URL)"
   else
     warn "VOICEVOX が応答しない ($URL)。起動: docker start voicevox  (初回: docker run -d --name voicevox --restart unless-stopped -p 127.0.0.1:50021:50021 voicevox/voicevox_engine:cpu-latest)"

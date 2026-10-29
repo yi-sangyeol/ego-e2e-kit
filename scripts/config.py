@@ -83,6 +83,8 @@ def check(cfg):
         errs.append(f"voice.engine は {sorted(ENGINES)} のどれか: {cfg['voice']['engine']}")
     if cfg["screenshots"] not in SCREENSHOT_MODES:
         errs.append(f"screenshots は {sorted(SCREENSHOT_MODES)} のどれか: {cfg['screenshots']}")
+    if not str(cfg["voice"]["voicevoxUrl"]).startswith(("http://", "https://")):
+        errs.append(f"voice.voicevoxUrl は http:// か https:// で始める: {cfg['voice']['voicevoxUrl']}")
     if float(cfg["video"]["speed"]) <= 0:
         errs.append("video.speed は正の数")
     return errs
