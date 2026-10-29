@@ -78,16 +78,31 @@ async function highlight(mark) {
   }, { mark });
 }
 
-// 文言が一致する一番内側の要素を実際にクリックする
+// 文言が一致する一番内側の要素を実際にクリックする。画面の描画が遅れることがあるので、見つかるまで最大 5 秒待つ
 async function clickText({ text, scope }) {
-  const ok = await page.evaluate(({ text, scope }) => {
-    const root = scope ? document.querySelector(scope) ?? document.body : document.body;
-    const hits = [...root.querySelectorAll("*")].filter((e) => e.offsetParent !== null && e.innerText?.trim() === text);
-    const el = hits.find((e) => ![...e.children].some((c) => c.innerText?.trim() === text)) ?? hits[0];
-    el?.click();
-    return Boolean(el);
-  }, { text, scope });
-  if (!ok) throw new Error(`click 対象が見つからない: ${text}`);
+  const end = Date.now() + 5000;
+  for (;;) {
+    const ok = await page.evaluate(({ text, scope }) => {
+      const root = scope ? document.querySelector(scope) ?? document.body : document.body;
+      const hits = [...root.querySelectorAll("*")].filter((e) => e.offsetParent !== null && e.innerText?.trim() === text);
+      const el = hits.find((e) => ![...e.children].some((c) => c.innerText?.trim() === text)) ?? hits[0];
+      el?.click();
+      return Boolean(el);
+    }, { text, scope });
+    if (ok) return;
+    if (Date.now() > end) throw new Error(`click 対象が見つからない: ${text}`);
+    await pause(200);
+  }
+}
+
+// expect の文言が全部出るまで待つ (最大 ms)。本文が落ち着いても、次の画面の描画がまだのことがある
+async function waitForTexts(want, ms) {
+  const end = Date.now() + ms;
+  for (;;) {
+    const body = await page.evaluate(() => document.body.innerText);
+    if (want.every((w) => body.includes(w)) || Date.now() > end) return body;
+    await pause(200);
+  }
 }
 
 const framesDir = `${OUT}/frames`;
@@ -153,13 +168,14 @@ async function runStep(i, s) {
     await caption(header, say); // 字幕は操作の開始時に出す（ナレーションも同時に始まる）
     if (s.click) { await clickText(typeof s.click === "string" ? { text: s.click } : s.click); await pause(400); await settle(s.wait ?? 4000); }
     if (s.run) { await new AsyncFunction("page", "pause", "task", "checks", s.run)(page, pause, task, checks); await pause(400); await settle(s.wait ?? 4000); }
+    const want = s.expect ? (Array.isArray(s.expect) ? s.expect : [s.expect]) : [];
+    if (want.length) await waitForTexts(want, s.wait ?? 4000); // 赤枠を付ける前に、期待の画面が出るのを待つ
     const hit = await highlight(s.mark);
     if (s.mark) found.push({ step: i, text: s.mark.text, found: hit });
     let ok = true;
-    if (s.expect) {
+    if (want.length) {
       const body = await page.evaluate(() => document.body.innerText);
       checks[`step${i}`] = body;
-      const want = Array.isArray(s.expect) ? s.expect : [s.expect];
       ok = want.every((w) => body.includes(w));
       if (!ok) failed.push({ step: i, expect: s.expect });
     }

@@ -1,7 +1,7 @@
 {
   "name": "ego-e2e-kit",
   "displayName": "ego E2E kit",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "ego-browser で Web アプリを実操作して確かめる。スクショで E2E 確認する skill と、字幕・音声・赤枠つきのテスト動画を撮る skill。",
   "author": { "name": "Yi Sangyeol", "url": "https://github.com/yi-sangyeol" },
   "homepage": "https://github.com/yi-sangyeol/ego-e2e-kit",
