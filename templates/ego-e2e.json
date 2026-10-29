@@ -1,0 +1,17 @@
+{
+  "targets": {
+    "web": "http://localhost:3000"
+  },
+  "preconditions": [
+    "ego-browser でテスト用アカウントにログイン済み",
+    "開発用の seed データが入っている"
+  ],
+  "notes": "プロジェクト固有の注意をここに書く (DB の見方、触ってはいけない外部連携、URL の形など)。skill が毎回読む。",
+  "reading": {
+    "tokens": { "MyApp": "マイアップ" },
+    "words": {}
+  },
+  "voice": { "engine": "auto", "speaker": 8 },
+  "video": { "speed": 1, "viewport": { "width": 1280, "height": 800 } },
+  "screenshots": "none"
+}

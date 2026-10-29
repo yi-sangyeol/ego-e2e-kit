@@ -1,0 +1,12 @@
+{
+  "name": "ego-e2e-kit",
+  "owner": { "name": "Yi Sangyeol", "url": "https://github.com/yi-sangyeol" },
+  "metadata": { "description": "ego-browser で動く E2E 確認・テスト動画の skill" },
+  "plugins": [
+    {
+      "name": "ego-e2e-kit",
+      "source": "./",
+      "description": "ego-browser で Web アプリを実操作し、スクショか字幕・音声つきの動画で結果を残す"
+    }
+  ]
+}
