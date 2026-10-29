@@ -17,7 +17,7 @@ if command -v ego-browser >/dev/null 2>&1; then
     ng "ego-browser はあるが 'ego-browser skill' が動かない -> ego-browser upgrade"
   fi
 else
-  ng "ego-browser が無い -> ego lite をインストールする (README の「依存」を参照)"
+  ng "ego-browser が無い -> ego lite アプリを https://lite.ego.app/ から入れ、初回のオンボーディングを済ませる (CLI が ~/.local/bin に、skill が ~/.claude/skills/ego-browser に入る)"
 fi
 
 if [ "$MODE" = "mov" ]; then

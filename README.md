@@ -15,12 +15,12 @@
 
 | 依存 | 必須 | 用途 |
 | --- | --- | --- |
-| **ego-browser (ego lite)** の CLI と skill | 両方の skill で必須 | ブラウザの実操作。[lite.ego.app](https://lite.ego.app/) からインストールし、`ego-browser skill` が動き、Claude Code から `ego-browser` skill が使えること |
+| **ego-browser (ego lite)** の CLI と skill | 両方の skill で必須 | ブラウザの実操作。ego lite アプリを [lite.ego.app](https://lite.ego.app/) から入れ、初回のオンボーディングを済ませると、CLI（`~/.local/bin/ego-browser`）と skill（`~/.claude/skills/ego-browser`）の両方が入る |
 | ffmpeg / ffprobe | `test-mov` で必須 | 動画の組み立て。macOS: `brew install ffmpeg` |
 | Python 3.9+ | `test-mov` で必須 | 音声と動画の組み立て（標準ライブラリのみ） |
 | VOICEVOX Engine | 任意 | 音声。無ければ macOS の `say`、それも無ければ音声なし（字幕のみ） |
 
-ego-browser は Claude Code のプラグインではないため、プラグインの `dependencies` には書けません。各 skill は最初に `scripts/doctor.sh` で依存を確かめ、足りなければ直し方を出して止まります。手で確かめるときは次を実行します。
+ego-browser の skill は Claude Code のプラグインとしては配られていません（ego lite アプリが自分の同梱ファイルを `~/.claude/skills` にリンクする）。そのため、プラグインの `dependencies` には書けません。各 skill は最初に `scripts/doctor.sh` で依存を確かめ、足りなければ直し方を出して止まります。手で確かめるときは次を実行します。
 
 ```bash
 bash scripts/doctor.sh mov
