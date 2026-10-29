@@ -140,6 +140,11 @@ def resolve(out):
 if __name__ == "__main__":
     if len(sys.argv) >= 2 and sys.argv[1] == "show":
         show()
+    elif len(sys.argv) >= 3 and sys.argv[1] == "get":  # 例: config.py get voice.voicevoxUrl
+        v = base_config()[0]
+        for k in sys.argv[2].split("."):
+            v = v[k]
+        print(v)
     elif len(sys.argv) >= 3 and sys.argv[1] == "resolve":
         resolve(Path(sys.argv[2]))
     else:

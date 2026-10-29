@@ -37,9 +37,13 @@ if [ "$MODE" = "mov" ]; then
     ng "python3.9 以上が無い (EGO_E2E_PYTHON で指定できる)"
   fi
 
-  # 音声は任意。VOICEVOX -> macOS say -> 音声なし (字幕のみ) の順に落ちる
-  URL="${EGO_E2E_VOICEVOX_URL:-http://127.0.0.1:50021}"
-  if curl -s --max-time 2 "$URL/version" >/dev/null 2>&1; then
+  # 音声は任意。VOICEVOX -> macOS say -> 音声なし (字幕のみ) の順に落ちる。設定の voice.engine / voice.voicevoxUrl を見る
+  CFG="$(cd "$(dirname "$0")" && pwd)/config.py"
+  ENGINE="$([ -n "$PY" ] && "$PY" -I "$CFG" get voice.engine 2>/dev/null || echo auto)"
+  URL="$([ -n "$PY" ] && "$PY" -I "$CFG" get voice.voicevoxUrl 2>/dev/null || echo http://127.0.0.1:50021)"
+  if [ "$ENGINE" = "say" ] || [ "$ENGINE" = "none" ]; then
+    ok "voice.engine=$ENGINE (VOICEVOX は使わない)"
+  elif curl -s --max-time 2 "$URL/version" >/dev/null 2>&1; then
     ok "VOICEVOX ($URL)"
   else
     warn "VOICEVOX が応答しない ($URL)。起動: docker start voicevox  (初回: docker run -d --name voicevox --restart unless-stopped -p 127.0.0.1:50021:50021 voicevox/voicevox_engine:cpu-latest)"
